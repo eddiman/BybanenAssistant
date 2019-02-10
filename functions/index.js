@@ -26,7 +26,8 @@ const {
   Permission,
   Suggestions,
   BasicCard,
-  SimpleResponse
+  SimpleResponse,
+  Button
 } = require('actions-on-google');
 
 // Import the firebase-functions package for deployment.
@@ -35,18 +36,6 @@ const functions = require('firebase-functions');
 // Instantiate the Dialogflow client.
 const app = dialogflow({debug: true});
 
-//Basic card for showing
-const timeCard = {
-
-  title: 'Next light rail',
-  text: 'Indigo Taco is a subtle bluish tone.',
-  image: {
-    url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_new.gif?alt=media&token=8705fc1a-6eee-4d61-bece-d69b3809801b',
-    accessibilityText: 'Indigo Taco Color',
-  },
-  display: 'WHITE',
-
-}
 
 // Handle the Dialogflow intent named 'Default Welcome Intent'.
 app.intent('Default Welcome Intent', (conv) => {
@@ -65,7 +54,19 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
   if (conv.data.fromStopEntity.toUpperCase() === "byparken".toUpperCase())
   {
     return getFromToStop(conv.data.fromStopEntity, "bergen lufthavn").then(res => {
-      conv.ask(`<speak>Got it, ${res}</speak>`)
+
+      if(!conv.screen) {
+        conv.ask(new SimpleResponse({
+          speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+          text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        }))
+
+
+      } else {
+
+      conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, "bergen lufthavn".capitalize(), res.departureLabel, res.formattedDepartureTime));
+
+      }
       conv.close()
 
     })
@@ -73,7 +74,20 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
     //conv.ask(new Suggestions('Towards Bergen Lufthavn'));
   } else if (conv.data.fromStopEntity.toUpperCase() === "bergen lufthavn".toUpperCase()) {
     return getFromToStop(conv.data.fromStopEntity, "byparken").then(res => {
-      conv.ask(`<speak>Very well, ${res}</speak>`)
+
+      if(!conv.screen) {
+        conv.ask(new SimpleResponse({
+          speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+          text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        }))
+
+
+      } else {
+
+      conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, "byparken".capitalize(), res.departureLabel, res.formattedDepartureTime));
+
+      }
+
       conv.close()
 
     })
@@ -91,10 +105,23 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 });
 
 app.intent('AskForToStop', (conv, {toStopEntity}) => {
-  //const fromStopEntity = conv.contexts.get('StopValue').parameters[fromStopEntity];
 
   return getFromToStop(conv.data.fromStopEntity, toStopEntity).then(res =>{
-    conv.ask(`<speak> Got it! ${res.capitalize()}</speak>`)
+    //conv.ask(`<speak>Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`)
+
+    if(!conv.screen) {
+      conv.ask(new SimpleResponse({
+        speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+      }))
+
+
+    } else {
+
+    conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
+
+    }
+
     conv.close();
 
   })
@@ -106,26 +133,40 @@ app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
   return getFromToStop(fromStopEntity, toStopEntity).then(res => {
     if(!conv.screen) {
       conv.ask(new SimpleResponse({
-        speech: `Ok, ${res}`,
-        text: `Ok, ${res}`,
+        speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
       }))
 
 
     } else {
-      /*conv.ask(new SimpleResponse({
-        speech: `Ok, ${res}`,
-        text: `Ok, ${res}`,
-      }))*/
-      conv.ask(`Here you go`, new BasicCard(timeCard));
+    conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
 
     }
 
   })
 
-
-  //conv.ask(new Suggestions('Yes', 'No'))
 });
 
+function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
+  let title = "Next light rail leaves in " + timeLeftToDep;
+  let subtitle = "From " + fromStop.capitalize() + " towards " + toStop.capitalize() + " at " + formattedDepartureTime;
+
+  return new BasicCard({
+
+    title: title,
+    subtitle: subtitle,
+    buttons: new Button({
+      title: 'More info on skyss.no',
+      url: 'https://skyss.no/',
+    }),
+    image: {
+      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_new.gif?alt=media&token=8705fc1a-6eee-4d61-bece-d69b3809801b',
+      accessibilityText: 'Bergen Light Rail',
+    },
+    display: 'WHITE',
+
+  })
+}
 
 app.intent('actions_intent_NO_INPUT', (conv) => {
   // Use the number of reprompts to vary response
@@ -187,13 +228,14 @@ async function getFromToStop(fromStop, toStop){
   //const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
   const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
   let thisDeparture = [];
-
+  let formattedDeparture = {};
 
   for (var i = 0; i < departures.length; i++) {
     let thisDeparture = departures[i];
     if(thisDeparture.destinationDisplay.frontText.toUpperCase() === toStop.toUpperCase()){
-      console.log("found the departure")
       //thisDeparture = departure;
+
+
       const expectedDepartureTime = thisDeparture.expectedDepartureTime;
       const destinationDisplay = thisDeparture.destinationDisplay;
       const serviceJourney = thisDeparture.serviceJourney;
@@ -204,9 +246,17 @@ async function getFromToStop(fromStop, toStop){
       const minDiff = minutesDifference(now, departureTime)
       const departureLabel = minDiff == 0 ? "now" : (minDiff < 15 ? `${minDiff} minutes` : toTimeString(departureTime))
 
-      //console.log(`${departureLabel} ${line.transportMode} ${line.publicCode} ${destinationDisplay.frontText}`)
-      return `the next ${line.transportMode} from ${fromStop.capitalize()} leaves in ${departureLabel} at ${toTimeString(departureTime)} towards ${destinationDisplay.frontText}.`
+      formattedDeparture = {
+        fromStop : fromStop.capitalize(),
+        formattedDepartureTime : toTimeString(departureTime),
+        departureLabel : departureLabel,
+        directionStop : destinationDisplay.frontText,
+        transportMode : line.transportMode
+      }
 
+      //console.log(`${departureLabel} ${line.transportMode} ${line.publicCode} ${destinationDisplay.frontText}`)
+      //return `the next ${line.transportMode} from ${fromStop.capitalize()} leaves in ${departureLabel} at ${toTimeString(departureTime)} towards ${destinationDisplay.frontText}.`
+      return formattedDeparture;
     }
   }
 }
