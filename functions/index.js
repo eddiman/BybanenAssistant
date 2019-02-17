@@ -36,35 +36,32 @@ const functions = require('firebase-functions');
 // Instantiate the Dialogflow client.
 const app = dialogflow({debug: true});
 
+/**INTENT**********************************************************************/
 
 // Handle the Dialogflow intent named 'Default Welcome Intent'.
 app.intent('Default Welcome Intent', (conv) => {
-  conv.ask(`<speak>Hello! From where do you want to take the light rail from?</speak>`)
+  conv.ask(`<speak>Hello! From where do you want to take the light rail?</speak>`)
   conv.ask(new Suggestions('from Byparken', 'from Bergen Lufthavn'));
 });
 
-
-
-app.intent('TestStop', (conv) => {
-});
+/**INTENT**********************************************************************/
 
 app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
   conv.data.fromStopEntity = fromStopEntity
 
-  if (conv.data.fromStopEntity.toUpperCase() === "byparken".toUpperCase())
-  {
+  if (conv.data.fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
     return getFromToStop(conv.data.fromStopEntity, "bergen lufthavn").then(res => {
 
       if(!conv.screen) {
         conv.ask(new SimpleResponse({
-          speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
-          text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+          speech: firstLastStopResponse(res),
+          text: firstLastStopResponse(res)
         }))
 
 
       } else {
 
-      conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, "bergen lufthavn".capitalize(), res.departureLabel, res.formattedDepartureTime));
+        conv.ask(firstLastStopResponse(res), createTimeCard(conv.data.fromStopEntity, "bergen lufthavn".capitalize(), res.departureLabel, res.formattedDepartureTime));
 
       }
       conv.close()
@@ -77,14 +74,12 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 
       if(!conv.screen) {
         conv.ask(new SimpleResponse({
-          speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
-          text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+          speech: firstLastStopResponse(res),
+          text: firstLastStopResponse(res)
         }))
-
-
       } else {
 
-      conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, "byparken".capitalize(), res.departureLabel, res.formattedDepartureTime));
+        conv.ask(firstLastStopResponse(res), createTimeCard(conv.data.fromStopEntity, "byparken".capitalize(), res.departureLabel, res.formattedDepartureTime));
 
       }
 
@@ -103,22 +98,21 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
     }
   }
 });
+/**INTENT**********************************************************************/
 
-app.intent('AskForToStop', (conv, {toStopEntity}) => {
+app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
 
   return getFromToStop(conv.data.fromStopEntity, toStopEntity).then(res =>{
-    //conv.ask(`<speak>Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`)
+
 
     if(!conv.screen) {
       conv.ask(new SimpleResponse({
-        speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
-        text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        speech: standardResponse(res),
+        text: standardResponse(res),
       }))
-
-
     } else {
 
-    conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(conv.data.fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
+      conv.ask(standardResponse(res), createTimeCard(conv.data.fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
 
     }
 
@@ -128,28 +122,102 @@ app.intent('AskForToStop', (conv, {toStopEntity}) => {
 
 });
 
-app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
+app.catch((conv, error) => {
+  console.error(error);
+  conv.ask('Sorry, that isn`t doing it for me. Can you say that again?');
+});
+/**INTENT**********************************************************************/
 
+app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
   return getFromToStop(fromStopEntity, toStopEntity).then(res => {
+
     if(!conv.screen) {
       conv.ask(new SimpleResponse({
-        speech: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
-        text: `Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}</speak>`,
+        speech: standardResponse(res),
+        text: standardResponse(res),
       }))
 
 
     } else {
-    conv.ask(`Got it, the next ${res.transportMode} from ${res.fromStop} leaves in ${res.departureLabel} at ${res.formattedDepartureTime} towards ${res.directionStop}`, createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
+      conv.ask(standardResponse(res), createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
 
     }
+    conv.close();
 
   })
 
+
 });
+
+
+/**INTENT**********************************************************************/
+
+app.intent('actions_intent_NO_INPUT', (conv) => {
+  // Use the number of reprompts to vary response
+  const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
+  if (repromptCount === 0) {
+    conv.ask(`I didn't hear anything.`);
+  } else if (repromptCount === 1) {
+    conv.ask(`Please say the name of a stop.`);
+  } else if (conv.arguments.get('IS_FINAL_REPROMPT')) {
+    conv.close(`I couldn't hear anything from you, so I'm ending this conversation, bye!`);
+  }
+});
+
+
+
+
+
+
+const tramStops = {
+  "byparken": "NSR:StopPlace:30859",
+  "nonneseter": "NSR:StopPlace:30862",
+  "bystasjonen": "NSR:StopPlace:30865",
+  "nygård" : "NSR:StopPlace:30867",
+  "florida" : "NSR:StopPlace:30917",
+  "danmarks plass" : "NSR:StopPlace:31372",
+  "kronstad" : "NSR:StopPlace:31374",
+  "brann stadion" : "NSR:StopPlace:31377",
+  "wergeland" : "NSR:StopPlace:31379",
+  "sletten" : "NSR:StopPlace:31382",
+  "slettebakken" : "NSR:StopPlace:31384",
+  "fantoft" : "NSR:StopPlace:31388",
+  "paradis" : "NSR:StopPlace:29298",
+  "hop" : "NSR:StopPlace:29815",
+  "nesttun terminal" : "NSR:StopPlace:29820",
+  "nesttun sentrum" : "NSR:StopPlace:29817",
+  "skjoldskiftet" : "NSR:StopPlace:29824",
+  "mårdalen" : "NSR:StopPlace:29827",
+  "skjold" : "NSR:StopPlace:29830",
+  "lagunen" : "NSR:StopPlace:30138",
+  "råstølen" : "NSR:StopPlace:30081",
+  "sandslivegen" : "NSR:StopPlace:30143",
+  "sandslimarka" : "NSR:StopPlace:30148",
+  "kokstad" : "NSR:StopPlace:30154",
+  "birkelandsskiftet terminal" : "NSR:StopPlace:30162",
+  "kokstadflaten" : "NSR:StopPlace:30159",
+  "bergen lufthavn" : "NSR:StopPlace:30156",
+}
+
+function standardResponse(formattedDeparture){
+  return `Got it, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} to ${formattedDeparture.toStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime} towards ${formattedDeparture.directionStop}`;
+}
+
+function firstLastStopResponse(formattedDeparture){
+  return `Of course, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime}`;
+}
+
+function minutesLeftString(minDiff) {
+  if (minDiff == 1) {
+    return "in " + minDiff + " minute";
+  } else {
+    return "in " + minDiff + " minutes";
+  }
+}
 
 function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
   let title = "Next light rail leaves in " + timeLeftToDep;
-  let subtitle = "From " + fromStop.capitalize() + " towards " + toStop.capitalize() + " at " + formattedDepartureTime;
+  let subtitle = "From " + fromStop.capitalize() + " to " + toStop.capitalize() + " at " + formattedDepartureTime;
 
   return new BasicCard({
 
@@ -168,47 +236,30 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
   })
 }
 
-app.intent('actions_intent_NO_INPUT', (conv) => {
-  // Use the number of reprompts to vary response
-  const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
-  if (repromptCount === 0) {
-    conv.ask(`I didn't hear anything.`);
-  } else if (repromptCount === 1) {
-    conv.ask(`Please say the name of a stop.`);
-  } else if (conv.arguments.get('IS_FINAL_REPROMPT')) {
-    conv.close(`I couldn't hear anything from you, so I'm ending this conversation, bye!`);
+function determineDirection(fromStop, toStop){
+  let fromStopPos = 0;
+  let toStopPos = 0;
+  let counter = 0;
+  for (var key in tramStops) {
+    counter++;
+    if (fromStop.toUpperCase() === key.toUpperCase()){
+      console.log(counter);
+      fromStopPos = counter;
+
+    }
+
+    if (toStop.toUpperCase() === key.toUpperCase()){
+      console.log(counter);
+      toStopPos = counter;
+    }
   }
-});
+  console.log(fromStopPos + ", " + toStopPos);
 
-
-
-const tramStops = {
-  "byparken": "NSR:StopPlace:30859",
-  "nonneseter": "NSR:StopPlace:30862",
-  "bystasjonen": "NSR:StopPlace:30865",
-  "nygård" : "NSR:StopPlace:30867",
-  "florida" : "NSR:StopPlace:30917",
-  "danmarks plass" : "NSR:StopPlace:31372",
-  "kronstad" : "NSR:StopPlace:31374",
-  "brann stadion" : "NSR:StopPlace:31377",
-  "wergeland" : "NSR:StopPlace:31379",
-  "sletten" : "NSR:StopPlace:31382",
-  "fantoft" : "NSR:StopPlace:31388",
-  "paradis" : "NSR:StopPlace:29298",
-  "hop" : "NSR:StopPlace:29815",
-  "nesttun terminal" : "NSR:StopPlace:29820",
-  "nesttun sentrum" : "NSR:StopPlace:29817",
-  "skjoldskiftet" : "NSR:StopPlace:29824",
-  "mårdalen" : "NSR:StopPlace:29827",
-  "skjold" : "NSR:StopPlace:29830",
-  "lagunen" : "NSR:StopPlace:30138",
-  "råstølen" : "NSR:StopPlace:30081",
-  "sandslivegen" : "NSR:StopPlace:30143",
-  "sandslimarka" : "NSR:StopPlace:30148",
-  "kokstad" : "NSR:StopPlace:30154",
-  "kokstadflaten" : "NSR:StopPlace:30159",
-  "bergen lufthavn" : "NSR:StopPlace:30156",
-
+  if(fromStopPos < toStopPos){
+    return "bergen lufthavn";
+  } else {
+    return "byparken";
+  }
 }
 
 function toTimeString(date) {
@@ -225,16 +276,16 @@ function minutesDifference(date1, date2) {
 
 async function getFromToStop(fromStop, toStop){
   const now = new Date();
-  //const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
   const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
   let thisDeparture = [];
   let formattedDeparture = {};
 
+  const direction = determineDirection(fromStop, toStop);
+
   for (var i = 0; i < departures.length; i++) {
     let thisDeparture = departures[i];
-    if(thisDeparture.destinationDisplay.frontText.toUpperCase() === toStop.toUpperCase()){
-      //thisDeparture = departure;
 
+    if(thisDeparture.destinationDisplay.frontText.toUpperCase() === direction.toUpperCase()){
 
       const expectedDepartureTime = thisDeparture.expectedDepartureTime;
       const destinationDisplay = thisDeparture.destinationDisplay;
@@ -244,18 +295,17 @@ async function getFromToStop(fromStop, toStop){
 
       const departureTime = new Date(expectedDepartureTime)
       const minDiff = minutesDifference(now, departureTime)
-      const departureLabel = minDiff == 0 ? "now" : (minDiff < 15 ? `${minDiff} minutes` : toTimeString(departureTime))
+      const departureLabel = minDiff == 0 ? "now" : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
 
       formattedDeparture = {
         fromStop : fromStop.capitalize(),
+        toStop : toStop.capitalize(),
         formattedDepartureTime : toTimeString(departureTime),
         departureLabel : departureLabel,
         directionStop : destinationDisplay.frontText,
         transportMode : line.transportMode
       }
 
-      //console.log(`${departureLabel} ${line.transportMode} ${line.publicCode} ${destinationDisplay.frontText}`)
-      //return `the next ${line.transportMode} from ${fromStop.capitalize()} leaves in ${departureLabel} at ${toTimeString(departureTime)} towards ${destinationDisplay.frontText}.`
       return formattedDeparture;
     }
   }
