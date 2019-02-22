@@ -36,11 +36,20 @@ const functions = require('firebase-functions');
 // Instantiate the Dialogflow client.
 const app = dialogflow({debug: true});
 
+const i18n = require('@sfeir/actions-on-google-i18n');
+i18n
+.configure({
+  directory: `${__dirname}/src/locales`,
+  //defaultFile: `${__dirname}/src/locales/index.json`,
+  defaultLocale: 'no-NO',
+})
+.use(app);
+
 /**INTENT**********************************************************************/
 
 // Handle the Dialogflow intent named 'Default Welcome Intent'.
 app.intent('Default Welcome Intent', (conv) => {
-  conv.ask(`<speak>Hello! From where do you want to take the light rail?</speak>`)
+  conv.ask(conv.__('WELCOME'));
   conv.ask(new Suggestions('from Byparken', 'from Bergen Lufthavn'));
 });
 
@@ -51,7 +60,6 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 
   if (conv.data.fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
     return getFromToStop(conv.data.fromStopEntity, "bergen lufthavn").then(res => {
-
       if(!conv.screen) {
         conv.ask(new SimpleResponse({
           speech: firstLastStopResponse(res),
@@ -88,7 +96,7 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
     })
 
   } else {
-    conv.ask(`<speak>Ok, you want to leave from ${fromStopEntity.capitalize()}. Which direction do you want to go towards?</speak>`)
+    conv.ask(`Ok, you want to leave from ${fromStopEntity.capitalize()}. Which direction do you want to go towards?`)
 
     if(!conv.screen)  {
       conv.ask(`<speak>The two directions are towards Byparken or Bergen Lufthavn</speak>`)
@@ -101,9 +109,7 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 /**INTENT**********************************************************************/
 
 app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
-
   return getFromToStop(conv.data.fromStopEntity, toStopEntity).then(res =>{
-
 
     if(!conv.screen) {
       conv.ask(new SimpleResponse({
@@ -111,9 +117,8 @@ app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
         text: standardResponse(res),
       }))
     } else {
-
+      conv.localize();
       conv.ask(standardResponse(res), createTimeCard(conv.data.fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
-
     }
 
     conv.close();
@@ -130,16 +135,13 @@ app.catch((conv, error) => {
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
   return getFromToStop(fromStopEntity, toStopEntity).then(res => {
-
+    conv.localize();
     if(!conv.screen) {
-      conv.ask(new SimpleResponse({
-        speech: standardResponse(res),
-        text: standardResponse(res),
-      }))
-
-
-    } else {
-      conv.ask(standardResponse(res), createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
+      conv.ask(standardResponse(res));
+      }
+     else {
+      //conv.ask(standardResponse(res), createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
+      conv.ask(standardResponse(res));
 
     }
     conv.close();
@@ -200,7 +202,17 @@ const tramStops = {
 }
 
 function standardResponse(formattedDeparture){
-  return `Got it, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} to ${formattedDeparture.toStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime} towards ${formattedDeparture.directionStop}`;
+var test = new SimpleResponse({
+  speech: conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"}),
+  text: conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"})
+});
+
+  return test;
+
+  //return conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"});
+  //return conv.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop});
+
+  //return `Got it, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} to ${formattedDeparture.toStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime} towards ${formattedDeparture.directionStop}`;
 }
 
 function firstLastStopResponse(formattedDeparture){

@@ -1,0 +1,6 @@
+{
+  "WELCOME" : "Hello! From where do you want to take the light rail?",
+  "STANDARD_RESPONSE" : "Got it, the next {tram} from {from} to {to} leaves {departureStop} at {departureTime} towards {directionStop}",
+  "RECIPE_SUGGEST_TEXT" : "%s will be best suitable for serving the guests",
+  "NEW_RECIPE_SUGGESTION" : "What are the ingredients that you are  having?"
+}
