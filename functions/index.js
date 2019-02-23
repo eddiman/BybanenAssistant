@@ -36,118 +36,79 @@ const functions = require('firebase-functions');
 // Instantiate the Dialogflow client.
 const app = dialogflow({debug: true});
 
-const i18n = require('@sfeir/actions-on-google-i18n');
-i18n
-.configure({
-  directory: `${__dirname}/src/locales`,
-  //defaultFile: `${__dirname}/src/locales/index.json`,
-  defaultLocale: 'no-NO',
-})
-.use(app);
+const i18n = require('i18n');
+
+i18n.configure({
+  locales: ['en-US', 'no-NO'],
+  directory: __dirname + '/locales',
+  objectNotation: true
+});
+
+
+app.middleware((conv) => {
+  conv.localize = () => {
+    i18n.setLocale(conv.user.locale);
+  };
+});
 
 /**INTENT**********************************************************************/
 
 // Handle the Dialogflow intent named 'Default Welcome Intent'.
 app.intent('Default Welcome Intent', (conv) => {
-  conv.ask(conv.__('WELCOME'));
-  conv.ask(new Suggestions('from Byparken', 'from Bergen Lufthavn'));
+  conv.localize();
+
+  conv.ask(i18n.__('WELCOME'));
+  conv.ask(new Suggestions(i18n.__('FROM_BYPARKEN'), i18n.__('FROM_AIRPORT')));
 });
 
 /**INTENT**********************************************************************/
 
 app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
+  conv.localize();
   conv.data.fromStopEntity = fromStopEntity
 
   if (conv.data.fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
-    return getFromToStop(conv.data.fromStopEntity, "bergen lufthavn").then(res => {
-      if(!conv.screen) {
-        conv.ask(new SimpleResponse({
-          speech: firstLastStopResponse(res),
-          text: firstLastStopResponse(res)
-        }))
+    return sayDeparture(conv.data.fromStopEntity, "bergen lufthavn", conv).then(res => {});
 
-
-      } else {
-
-        conv.ask(firstLastStopResponse(res), createTimeCard(conv.data.fromStopEntity, "bergen lufthavn".capitalize(), res.departureLabel, res.formattedDepartureTime));
-
-      }
-      conv.close()
-
-    })
-
-    //conv.ask(new Suggestions('Towards Bergen Lufthavn'));
   } else if (conv.data.fromStopEntity.toUpperCase() === "bergen lufthavn".toUpperCase()) {
-    return getFromToStop(conv.data.fromStopEntity, "byparken").then(res => {
-
-      if(!conv.screen) {
-        conv.ask(new SimpleResponse({
-          speech: firstLastStopResponse(res),
-          text: firstLastStopResponse(res)
-        }))
-      } else {
-
-        conv.ask(firstLastStopResponse(res), createTimeCard(conv.data.fromStopEntity, "byparken".capitalize(), res.departureLabel, res.formattedDepartureTime));
-
-      }
-
-      conv.close()
-
-    })
+    return sayDeparture(conv.data.fromStopEntity, "byparken", conv).then(res => {});
 
   } else {
-    conv.ask(`Ok, you want to leave from ${fromStopEntity.capitalize()}. Which direction do you want to go towards?`)
+    conv.ask(i18n.__('FROM_DIRECTION', {from: fromStopEntity.capitalize()}))
 
     if(!conv.screen)  {
-      conv.ask(`<speak>The two directions are towards Byparken or Bergen Lufthavn</speak>`)
-
+      conv.ask(i18n.__('FROM_DIRECTION_HELPER'));
     } else {
-      conv.ask(new Suggestions('Towards Byparken', 'Towards Bergen Lufthavn'));
+      conv.ask(new Suggestions(i18n.__('BYPARKEN'), i18n.__('AIRPORT')));
     }
   }
 });
 /**INTENT**********************************************************************/
 
 app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
-  return getFromToStop(conv.data.fromStopEntity, toStopEntity).then(res =>{
-
-    if(!conv.screen) {
-      conv.ask(new SimpleResponse({
-        speech: standardResponse(res),
-        text: standardResponse(res),
-      }))
-    } else {
-      conv.localize();
-      conv.ask(standardResponse(res), createTimeCard(conv.data.fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
-    }
-
-    conv.close();
-
-  })
+  return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
 
 app.catch((conv, error) => {
   console.error(error);
-  conv.ask('Sorry, that isn`t doing it for me. Can you say that again?');
+  conv.ask(i18n.__('ERROR'));
+  conv.close();
 });
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
-  return getFromToStop(fromStopEntity, toStopEntity).then(res => {
-    conv.localize();
-    if(!conv.screen) {
-      conv.ask(standardResponse(res));
-      }
-     else {
-      //conv.ask(standardResponse(res), createTimeCard(fromStopEntity, toStopEntity, res.departureLabel, res.formattedDepartureTime));
-      conv.ask(standardResponse(res));
+  if (fromStopEntity.toUpperCase() === "bergen lufthavn".toUpperCase()) {
+    return sayDeparture(fromStopEntity, "byparken", conv).then(res => {});
 
-    }
-    conv.close();
+  } else if (fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
+    return sayDeparture(fromStopEntity, "bergen lufthavn", conv).then(res => {});
 
-  })
 
+  } else {
+    return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
+
+  }
 
 });
 
@@ -155,14 +116,16 @@ app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
 /**INTENT**********************************************************************/
 
 app.intent('actions_intent_NO_INPUT', (conv) => {
+  conv.localize();
+
   // Use the number of reprompts to vary response
   const repromptCount = parseInt(conv.arguments.get('REPROMPT_COUNT'));
   if (repromptCount === 0) {
-    conv.ask(`I didn't hear anything.`);
+    conv.ask(i18n.__('NO_INPUT_1'));
   } else if (repromptCount === 1) {
-    conv.ask(`Please say the name of a stop.`);
+    conv.ask(i18n.__('NO_INPUT_2'));
   } else if (conv.arguments.get('IS_FINAL_REPROMPT')) {
-    conv.close(`I couldn't hear anything from you, so I'm ending this conversation, bye!`);
+    conv.close(i18n.__('NO_INPUT_3'));
   }
 });
 
@@ -201,42 +164,63 @@ const tramStops = {
   "bergen lufthavn" : "NSR:StopPlace:30156",
 }
 
-function standardResponse(formattedDeparture){
-var test = new SimpleResponse({
-  speech: conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"}),
-  text: conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"})
-});
-
-  return test;
-
-  //return conv.__('RECIPE_SUGGEST_TEXT', { test: "trall"});
-  //return conv.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop});
-
-  //return `Got it, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} to ${formattedDeparture.toStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime} towards ${formattedDeparture.directionStop}`;
+async function sayDeparture(fromStop, toStop, conv) {
+const res = await getFromToStop(fromStop, toStop);
+  conv.localize();
+  if(!conv.screen) {
+    conv.ask(standardResponse(res));
+    conv.close();
+  }
+  else {
+    conv.ask(standardResponse(res), createTimeCard(fromStop, toStop, res.departureLabel, res.formattedDepartureTime));
+  }
+  conv.close();
 }
 
+
+function standardResponse(formattedDeparture){
+  const byparkenToAirport = (formattedDeparture.fromStop.toUpperCase() == "byparken".toUpperCase()) && (formattedDeparture.toStop.toUpperCase() == "bergen lufthavn".toUpperCase());
+  const airportToByparken = (formattedDeparture.fromStop.toUpperCase() == "bergen lufthavn".toUpperCase()) && (formattedDeparture.toStop.toUpperCase() == "byparken".toUpperCase());
+
+  if (byparkenToAirport || airportToByparken ){
+    return new SimpleResponse({
+      speech: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
+      text: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop})
+    });
+  } else {
+    return new SimpleResponse({
+      speech: i18n.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
+      text: i18n.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop})
+    });
+  }
+}
+
+
 function firstLastStopResponse(formattedDeparture){
-  return `Of course, the next ${formattedDeparture.transportMode} from ${formattedDeparture.fromStop} leaves ${formattedDeparture.departureLabel} at ${formattedDeparture.formattedDepartureTime}`;
+  return new SimpleResponse({
+    speech: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
+    text: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop})
+  });
 }
 
 function minutesLeftString(minDiff) {
   if (minDiff == 1) {
-    return "in " + minDiff + " minute";
+    return  i18n.__('IN_MINUTE', {diffMin : minDiff});
   } else {
-    return "in " + minDiff + " minutes";
+    return  i18n.__('IN_MINUTES', {diffMin : minDiff});
   }
 }
 
 function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
-  let title = "Next light rail leaves in " + timeLeftToDep;
-  let subtitle = "From " + fromStop.capitalize() + " to " + toStop.capitalize() + " at " + formattedDepartureTime;
+  let title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
+  let subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
 
   return new BasicCard({
 
     title: title,
     subtitle: subtitle,
     buttons: new Button({
-      title: 'More info on skyss.no',
+      title: i18n.__('CARD_MORE_INFO'),
       url: 'https://skyss.no/',
     }),
     image: {
@@ -307,7 +291,7 @@ async function getFromToStop(fromStop, toStop){
 
       const departureTime = new Date(expectedDepartureTime)
       const minDiff = minutesDifference(now, departureTime)
-      const departureLabel = minDiff == 0 ? "now" : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
+      const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
 
       formattedDeparture = {
         fromStop : fromStop.capitalize(),

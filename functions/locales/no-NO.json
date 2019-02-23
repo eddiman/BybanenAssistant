@@ -1,0 +1,28 @@
+{
+  "WELCOME" : "Hei! Hvor vil du ta Bybanen fra?",
+  "BYPARKEN" : "Byparken",
+  "AIRPORT" : "Flyplassen",
+  "FROM_BYPARKEN" : "Fra Byparken",
+  "FROM_AIRPORT" : "Fra flyplassen",
+
+  "FROM_DIRECTION" : "Ok, du vil dra fra {{from}}. Hvilket stopp vil du av på?",
+  "FROM_DIRECTION_HELPER" : "Vennligst si et bybanestopp.",
+
+  "STANDARD_RESPONSE" : "Skjønner! Neste bybane fra {{from}} til {{to}} drar {{departureStop}} klokken {{departureTime}} mot {{directionStop}}.",
+  "FIRST_LAST_RESPONSE" : "Ok! Neste bybane fra {{from}} drar {{departureStop}} klokken {{departureTime}} mot {{directionStop}}.",
+  "NO_INPUT_1" : "Jeg fikk ikke det med meg, kan du gjenta det?",
+  "NO_INPUT_2" : "Vennligst si et stopp.",
+  "NO_INPUT_3" : "Jeg hørte ikke noe, så jeg avslutter denne samtalen.",
+
+  "ERROR" : "Beklager, jeg tror noe gikk galt og jeg må avslutte samtalen. Du må nesten bare prøve igjen litt senere.",
+
+  "IN_MINUTES" : "om {{diffMin}} minutter",
+  "IN_MINUTE" : "om {{diffMin}} minutt",
+  "NOW" : "nå",
+
+  "CARD_TITLE" : "Neste bybane drar {{timeLeft}}",
+  "CARD_SUBTITLE" : "Fra {{from}} til {{to}} klokken {{time}}",
+  "CARD_MORE_INFO" : "Mer info på skyss.no"
+
+
+}

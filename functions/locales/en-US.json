@@ -1,0 +1,26 @@
+{
+  "WELCOME" : "Hello! From where do you want to take the light rail?",
+  "FROM_BYPARKEN" : "From Byparken",
+  "FROM_AIRPORT" : "From the airport",
+
+  "FROM_DIRECTION" : "Ok, you want to leave from {{from}}. To where do you want to go?",
+  "FROM_DIRECTION_HELPER" : "Please say a Bergen Light Rail stop.",
+
+  "STANDARD_RESPONSE" : "Got it, the next {{tram}} from {{from}} to {{to}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
+  "FIRST_LAST_RESPONSE" : "Got it, the next {{tram}} from {{from}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
+  "NO_INPUT_1" : "I didn't hear anything.",
+  "NO_INPUT_2" : "Please say the name of a Bergen Light Rail stop.",
+  "NO_INPUT_3" : "I couldn't hear anything from you, so I'm ending this conversation. Bye!",
+
+  "ERROR" : "I'm sorry, I think something went wrong and I have to cancel this conversation. You just have to try again a little bit later.",
+
+  "IN_MINUTES" : "in {{diffMin}} minutes",
+  "IN_MINUTE" : "in {{diffMin}} minute",
+  "NOW" : "now",
+
+  "CARD_TITLE" : "Next light rail leaves {{timeLeft}}",
+  "CARD_SUBTITLE" : "From {{from}} to {{to}} at {{time}}",
+  "CARD_MORE_INFO" : "More info on skyss.no"
+
+
+}

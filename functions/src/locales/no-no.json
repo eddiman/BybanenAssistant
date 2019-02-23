@@ -1,6 +1,0 @@
-{
-  "WELCOME" : "Hei! Hvor vil du ta Bybanen fra?",
-  "STANDARD_RESPONSE" : "Greit, neste {tram} fra {from} til {to} drar {departureStop}, kl {departureTime} mot {directionStop}",
-  "RECIPE_SUGGEST_TEXT" : "{test}  will be best suitable for serving the guests",
-  "NEW_RECIPE_SUGGESTION" : "What are the ingredients that you are  having?"
-}
