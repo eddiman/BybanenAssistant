@@ -1,5 +1,7 @@
 {
   "WELCOME" : "Hello! From where do you want to take the light rail?",
+  "BYPARKEN" : "Byparken",
+  "AIRPORT" : "Flyplassen",
   "FROM_BYPARKEN" : "From Byparken",
   "FROM_AIRPORT" : "From the airport",
 

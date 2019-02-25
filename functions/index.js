@@ -41,7 +41,8 @@ const i18n = require('i18n');
 i18n.configure({
   locales: ['en-US', 'no-NO'],
   directory: __dirname + '/locales',
-  objectNotation: true
+  objectNotation: true,
+  defaultLocale: 'en-US'
 });
 
 
@@ -224,7 +225,7 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
       url: 'https://skyss.no/',
     }),
     image: {
-      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_new.gif?alt=media&token=8705fc1a-6eee-4d61-bece-d69b3809801b',
+      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/banen.gif?alt=media&token=ca31aa7b-3e62-440a-af1a-dd39376a88ca',
       accessibilityText: 'Bergen Light Rail',
     },
     display: 'WHITE',
