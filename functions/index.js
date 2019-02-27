@@ -225,7 +225,7 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
       url: 'https://skyss.no/',
     }),
     image: {
-      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/banen.gif?alt=media&token=ca31aa7b-3e62-440a-af1a-dd39376a88ca',
+      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
       accessibilityText: 'Bergen Light Rail',
     },
     display: 'WHITE',
