@@ -12,11 +12,8 @@
 // limitations under the License.
 
 'use strict';
+const enturApi = require('./entur-api');
 
-const EnturService = require('@entur/sdk').default;
-const convertFeatureToLocation = require('@entur/sdk').convertFeatureToLocation;
-console.log(EnturService)
-const service = new EnturService({ clientName: 'Pires-BybaneAssistant' })
 
 // Import the Dialogflow module from the Actions on Google client library.
 // Import the Dialogflow module and response creation dependencies from the
@@ -90,12 +87,12 @@ app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
   return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
-
+/*
 app.catch((conv, error) => {
   console.error(error);
   conv.ask(i18n.__('ERROR'));
   conv.close();
-});
+});*/
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
@@ -130,43 +127,8 @@ app.intent('actions_intent_NO_INPUT', (conv) => {
   }
 });
 
-
-
-
-
-
-const tramStops = {
-  "byparken": "NSR:StopPlace:30859",
-  "nonneseter": "NSR:StopPlace:30862",
-  "bystasjonen": "NSR:StopPlace:30865",
-  "nygård" : "NSR:StopPlace:30867",
-  "florida" : "NSR:StopPlace:30917",
-  "danmarks plass" : "NSR:StopPlace:31372",
-  "kronstad" : "NSR:StopPlace:31374",
-  "brann stadion" : "NSR:StopPlace:31377",
-  "wergeland" : "NSR:StopPlace:31379",
-  "sletten" : "NSR:StopPlace:31382",
-  "slettebakken" : "NSR:StopPlace:31384",
-  "fantoft" : "NSR:StopPlace:31388",
-  "paradis" : "NSR:StopPlace:29298",
-  "hop" : "NSR:StopPlace:29815",
-  "nesttun terminal" : "NSR:StopPlace:29820",
-  "nesttun sentrum" : "NSR:StopPlace:29817",
-  "skjoldskiftet" : "NSR:StopPlace:29824",
-  "mårdalen" : "NSR:StopPlace:29827",
-  "skjold" : "NSR:StopPlace:29830",
-  "lagunen" : "NSR:StopPlace:30138",
-  "råstølen" : "NSR:StopPlace:30081",
-  "sandslivegen" : "NSR:StopPlace:30143",
-  "sandslimarka" : "NSR:StopPlace:30148",
-  "kokstad" : "NSR:StopPlace:30154",
-  "birkelandsskiftet terminal" : "NSR:StopPlace:30162",
-  "kokstadflaten" : "NSR:StopPlace:30159",
-  "bergen lufthavn" : "NSR:StopPlace:30156",
-}
-
 async function sayDeparture(fromStop, toStop, conv) {
-const res = await getFromToStop(fromStop, toStop);
+const res = await enturApi.getFromToStop(fromStop, toStop);
   conv.localize();
   if(!conv.screen) {
     conv.ask(standardResponse(res));
@@ -204,13 +166,6 @@ function firstLastStopResponse(formattedDeparture){
   });
 }
 
-function minutesLeftString(minDiff) {
-  if (minDiff == 1) {
-    return  i18n.__('IN_MINUTE', {diffMin : minDiff});
-  } else {
-    return  i18n.__('IN_MINUTES', {diffMin : minDiff});
-  }
-}
 
 function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
   let title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
@@ -233,80 +188,11 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
   })
 }
 
-function determineDirection(fromStop, toStop){
-  let fromStopPos = 0;
-  let toStopPos = 0;
-  let counter = 0;
-  for (var key in tramStops) {
-    counter++;
-    if (fromStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
-      fromStopPos = counter;
 
-    }
 
-    if (toStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
-      toStopPos = counter;
-    }
-  }
-  console.log(fromStopPos + ", " + toStopPos);
 
-  if(fromStopPos < toStopPos){
-    return "bergen lufthavn";
-  } else {
-    return "byparken";
-  }
-}
 
-function toTimeString(date) {
 
-  const hour = String(date.getHours() + 1).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${hour}:${minute}`
-}
-
-function minutesDifference(date1, date2) {
-  const timeDiff = Math.abs(date2.getTime() - date1.getTime())
-  return Math.floor(timeDiff / (1000 * 60))
-}
-
-async function getFromToStop(fromStop, toStop){
-  const now = new Date();
-  const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
-  let thisDeparture = [];
-  let formattedDeparture = {};
-
-  const direction = determineDirection(fromStop, toStop);
-
-  for (var i = 0; i < departures.length; i++) {
-    let thisDeparture = departures[i];
-
-    if(thisDeparture.destinationDisplay.frontText.toUpperCase() === direction.toUpperCase()){
-
-      const expectedDepartureTime = thisDeparture.expectedDepartureTime;
-      const destinationDisplay = thisDeparture.destinationDisplay;
-      const serviceJourney = thisDeparture.serviceJourney;
-      //const { line } = serviceJourney.journeyPattern
-      const line = serviceJourney.journeyPattern.line;
-
-      const departureTime = new Date(expectedDepartureTime)
-      const minDiff = minutesDifference(now, departureTime)
-      const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
-
-      formattedDeparture = {
-        fromStop : fromStop.capitalize(),
-        toStop : toStop.capitalize(),
-        formattedDepartureTime : toTimeString(departureTime),
-        departureLabel : departureLabel,
-        directionStop : destinationDisplay.frontText,
-        transportMode : line.transportMode
-      }
-
-      return formattedDeparture;
-    }
-  }
-}
 
 
 String.prototype.capitalize = function() {
