@@ -84,29 +84,23 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 /**INTENT**********************************************************************/
 
 app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
+  conv.localize();
+
   return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
 /*
 app.catch((conv, error) => {
-  console.error(error);
-  conv.ask(i18n.__('ERROR'));
-  conv.close();
+console.error(error);
+conv.ask(i18n.__('ERROR'));
+conv.close();
 });*/
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
-  if (fromStopEntity.toUpperCase() === "bergen lufthavn".toUpperCase()) {
-    return sayDeparture(fromStopEntity, "byparken", conv).then(res => {});
+  conv.localize();
+  return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
 
-  } else if (fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
-    return sayDeparture(fromStopEntity, "bergen lufthavn", conv).then(res => {});
-
-
-  } else {
-    return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
-
-  }
 
 });
 
@@ -127,18 +121,25 @@ app.intent('actions_intent_NO_INPUT', (conv) => {
   }
 });
 
+
+
 async function sayDeparture(fromStop, toStop, conv) {
-const res = await enturApi.getFromToStop(fromStop, toStop);
-  conv.localize();
-  if(!conv.screen) {
-    conv.ask(standardResponse(res));
+  return enturApi.getFromToStop(fromStop, toStop).then(res =>{
+    let fromtopString = fromStop + "";
+    let toStopString = toStop + "";
+
+    if(!conv.screen) {
+      conv.ask(standardResponse(res));
+      conv.close();
+    }
+    else {
+      conv.ask(standardResponse(res));
+      conv.ask(createTimeCard(fromtopString, toStopString, res.departureLabel, res.formattedDepartureTime));
+    }
     conv.close();
   }
-  else {
-    conv.ask(standardResponse(res), createTimeCard(fromStop, toStop, res.departureLabel, res.formattedDepartureTime));
-  }
-  conv.close();
-}
+
+)};
 
 
 function standardResponse(formattedDeparture){
@@ -146,10 +147,7 @@ function standardResponse(formattedDeparture){
   const airportToByparken = (formattedDeparture.fromStop.toUpperCase() == "bergen lufthavn".toUpperCase()) && (formattedDeparture.toStop.toUpperCase() == "byparken".toUpperCase());
 
   if (byparkenToAirport || airportToByparken ){
-    return new SimpleResponse({
-      speech: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
-      text: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop})
-    });
+    return firstLastStopResponse(formattedDeparture)
   } else {
     return new SimpleResponse({
       speech: i18n.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
@@ -168,10 +166,10 @@ function firstLastStopResponse(formattedDeparture){
 
 
 function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
-  let title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
-  let subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
+  const title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
+  const subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
 
-  return new BasicCard({
+  const card = new BasicCard({
 
     title: title,
     subtitle: subtitle,
@@ -185,7 +183,9 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
     },
     display: 'WHITE',
 
-  })
+  });
+
+  return card;
 }
 
 

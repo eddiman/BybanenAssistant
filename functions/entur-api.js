@@ -6,7 +6,9 @@ const i18n = require('i18n');
 
 module.exports = {
 
-  getFromToStop : async function(fromStop, toStop){
+  getFromToStop : async function(fromStop1, toStop1){
+    let fromStop = fromStop1+ "";
+    let toStop = toStop1 + "";
     const now = new Date();
     const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
     let thisDeparture = [];
@@ -80,17 +82,14 @@ function determineDirection(fromStop, toStop){
   for (var key in tramStops) {
     counter++;
     if (fromStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
       fromStopPos = counter;
 
     }
 
     if (toStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
       toStopPos = counter;
     }
   }
-  console.log(fromStopPos + ", " + toStopPos);
 
   if(fromStopPos < toStopPos){
     return "bergen lufthavn";
