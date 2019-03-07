@@ -42,7 +42,81 @@ module.exports = {
         return formattedDeparture;
       }
     }
-  }
+  },
+  getFromToStop : async function(fromStop1, toStop1){
+    let fromStop = fromStop1+ "";
+    let toStop = toStop1 + "";
+    const now = new Date();
+    const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
+    let thisDeparture = [];
+    let formattedDeparture = {};
+
+    const direction = determineDirection(fromStop, toStop);
+
+    for (var i = 0; i < departures.length; i++) {
+      let thisDeparture = departures[i];
+
+      if(thisDeparture.destinationDisplay.frontText.toUpperCase() === direction.toUpperCase()){
+
+        const expectedDepartureTime = thisDeparture.expectedDepartureTime;
+        const destinationDisplay = thisDeparture.destinationDisplay;
+        const serviceJourney = thisDeparture.serviceJourney;
+        const line = serviceJourney.journeyPattern.line;
+
+        const departureTime = new Date(expectedDepartureTime)
+        const minDiff = minutesDifference(now, departureTime)
+        const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
+
+        formattedDeparture = {
+          fromStop : fromStop.capitalize(),
+          toStop : toStop.capitalize(),
+          formattedDepartureTime : toTimeString(departureTime),
+          departureLabel : departureLabel,
+          directionStop : destinationDisplay.frontText,
+          transportMode : line.transportMode
+        }
+
+        return formattedDeparture;
+      }
+    }
+  },
+  getOnlyFromStop : async function(fromStop1, toStop1){
+    let fromStop = fromStop1+ "";
+    let toStop = toStop1 + "";
+    const now = new Date();
+    const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
+    let thisDeparture = [];
+    let formattedDeparture = {};
+
+    const direction = determineDirection(fromStop, toStop);
+
+    for (var i = 0; i < departures.length; i++) {
+      let thisDeparture = departures[i];
+
+      if(thisDeparture.destinationDisplay.frontText.toUpperCase() === direction.toUpperCase()){
+
+        const expectedDepartureTime = thisDeparture.expectedDepartureTime;
+        const destinationDisplay = thisDeparture.destinationDisplay;
+        const serviceJourney = thisDeparture.serviceJourney;
+        const line = serviceJourney.journeyPattern.line;
+
+        const departureTime = new Date(expectedDepartureTime)
+        const minDiff = minutesDifference(now, departureTime)
+        const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
+
+        formattedDeparture = {
+          fromStop : fromStop.capitalize(),
+          toStop : toStop.capitalize(),
+          formattedDepartureTime : toTimeString(departureTime),
+          departureLabel : departureLabel,
+          directionStop : destinationDisplay.frontText,
+          transportMode : line.transportMode
+        }
+
+        return formattedDeparture;
+      }
+    }
+  },
 }
 
 const tramStops = {

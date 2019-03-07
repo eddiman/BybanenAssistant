@@ -89,12 +89,12 @@ app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
   return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
-/*
+
 app.catch((conv, error) => {
 console.error(error);
 conv.ask(i18n.__('ERROR'));
 conv.close();
-});*/
+});
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
@@ -104,7 +104,11 @@ app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
 
 });
 
+app.intent('GetNextTramsFromOneStop', (conv, {fromStopEntity}) => {
+  conv.localize();
+  //return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
 
+});
 /**INTENT**********************************************************************/
 
 app.intent('actions_intent_NO_INPUT', (conv) => {
@@ -122,7 +126,7 @@ app.intent('actions_intent_NO_INPUT', (conv) => {
 });
 
 
-
+/**************RESPONSES************************/
 async function sayDeparture(fromStop, toStop, conv) {
   return enturApi.getFromToStop(fromStop, toStop).then(res =>{
     let fromtopString = fromStop + "";
@@ -187,13 +191,6 @@ function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime 
 
   return card;
 }
-
-
-
-
-
-
-
 
 String.prototype.capitalize = function() {
   return this.charAt(0).toUpperCase() + this.slice(1);
