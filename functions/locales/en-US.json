@@ -10,6 +10,7 @@
 
   "STANDARD_RESPONSE" : "Got it, the next {{tram}} from {{from}} to {{to}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
   "FIRST_LAST_RESPONSE" : "Got it, the next {{tram}} from {{from}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
+  "ONE_STOP_RESPONSE" : "The next {{tram1}} from {{from1}} leaves {{departureStop1}} at {{departureTime1}} towards {{directionStop1}}, and the in the other direction towards {{directionStop2}} the {{tram1}} leaves {{departureStop2}} at {{departureTime1}}.",
   "NO_INPUT_1" : "I didn't hear anything.",
   "NO_INPUT_2" : "Please say the name of a Bergen Light Rail stop.",
   "NO_INPUT_3" : "I couldn't hear anything from you, so I'm ending this conversation. Bye!",

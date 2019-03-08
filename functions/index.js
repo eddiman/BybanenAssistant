@@ -89,12 +89,12 @@ app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
   return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
-
+/*
 app.catch((conv, error) => {
 console.error(error);
 conv.ask(i18n.__('ERROR'));
 conv.close();
-});
+});*/
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
@@ -106,8 +106,11 @@ app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
 
 app.intent('GetNextTramsFromOneStop', (conv, {fromStopEntity}) => {
   conv.localize();
-  //return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
 
+  return enturApi.getOnlyFromStop(fromStopEntity).then(res =>{
+    conv.ask(oneStopResponse(res[0], res[1]));
+    conv.close()
+  });
 });
 /**INTENT**********************************************************************/
 
@@ -168,34 +171,58 @@ function firstLastStopResponse(formattedDeparture){
   });
 }
 
+function oneStopResponse(formattedDeparture1, formattedDeparture2){
+  return new SimpleResponse({
+    speech: i18n.__('ONE_STOP_RESPONSE', {
+      tram1: formattedDeparture1.transportMode,
+      from1: formattedDeparture1.fromStop,
+      departureStop1: formattedDeparture1.departureLabel,
+      departureTime1: formattedDeparture1.formattedDepartureTime,
+      directionStop1: formattedDeparture1.directionStop,
+      departureStop2: formattedDeparture2.departureLabel,
+      departureTime2: formattedDeparture2.formattedDepartureTime,
+      directionStop2: formattedDeparture2.directionStop}),
 
-function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
-  const title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
-  const subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
-
-  const card = new BasicCard({
-
-    title: title,
-    subtitle: subtitle,
-    buttons: new Button({
-      title: i18n.__('CARD_MORE_INFO'),
-      url: 'https://skyss.no/',
-    }),
-    image: {
-      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
-      accessibilityText: 'Bergen Light Rail',
-    },
-    display: 'WHITE',
-
-  });
-
-  return card;
-}
-
-String.prototype.capitalize = function() {
-  return this.charAt(0).toUpperCase() + this.slice(1);
-}
+      text: i18n.__('ONE_STOP_RESPONSE', {
+        tram1: formattedDeparture1.transportMode,
+        from1: formattedDeparture1.fromStop,
+        departureStop1: formattedDeparture1.departureLabel,
+        departureTime1: formattedDeparture1.formattedDepartureTime,
+        directionStop1: formattedDeparture1.directionStop,
+        departureStop2: formattedDeparture2.departureLabel,
+        departureTime2: formattedDeparture2.formattedDepartureTime,
+        directionStop2: formattedDeparture2.directionStop})
+      });
+    }
 
 
-// Set the DialogflowApp object to handle the HTTPS POST request.
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
+    function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
+      const title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
+      const subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
+
+      const card = new BasicCard({
+
+        title: title,
+        subtitle: subtitle,
+        buttons: new Button({
+          title: i18n.__('CARD_MORE_INFO'),
+          url: 'https://skyss.no/',
+        }),
+        image: {
+          url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
+          accessibilityText: 'Bergen Light Rail',
+        },
+        display: 'WHITE',
+
+      });
+
+      return card;
+    }
+
+    String.prototype.capitalize = function() {
+      return this.charAt(0).toUpperCase() + this.slice(1);
+    }
+
+
+    // Set the DialogflowApp object to handle the HTTPS POST request.
+    exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);

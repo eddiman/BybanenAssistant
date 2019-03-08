@@ -10,6 +10,7 @@
 
   "STANDARD_RESPONSE" : "Skjønner! Neste bybane fra {{from}} til {{to}} drar {{departureStop}} klokken {{departureTime}} mot {{directionStop}}.",
   "FIRST_LAST_RESPONSE" : "Ok! Neste bybane fra {{from}} drar {{departureStop}} klokken {{departureTime}} mot {{directionStop}}.",
+  "ONE_STOP_RESPONSE" : "Neste bybane fra {{from1}} drar {{departureStop1}} klokken {{departureTime1}} mot {{directionStop1}}, og i den andre retningen mot {{directionStop2}} drar bybanen {{departureStop2}} klokken {{departureTime2}}",
   "NO_INPUT_1" : "Jeg fikk ikke det med meg, kan du gjenta det?",
   "NO_INPUT_2" : "Vennligst si et stopp.",
   "NO_INPUT_3" : "Jeg hørte ikke noe, så jeg avslutter denne samtalen.",
