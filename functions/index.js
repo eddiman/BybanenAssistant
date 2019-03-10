@@ -106,9 +106,17 @@ app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
 
 app.intent('GetNextTramsFromOneStop', (conv, {fromStopEntity}) => {
   conv.localize();
+const fromStopIsByparken = (fromStopEntity.toUpperCase() == "byparken".toUpperCase())
+const fromStopIsAirport = (fromStopEntity.toUpperCase() == "bergen lufthavn".toUpperCase())
 
   return enturApi.getOnlyFromStop(fromStopEntity).then(res =>{
-    conv.ask(oneStopResponse(res[0], res[1]));
+    if (fromStopIsByparken || fromStopIsAirport) {
+    conv.ask(oneEndStopResponse(res[0],res[1]));
+  } else {
+    conv.ask(oneStopResponse(res[0],res[1]));
+  }
+    conv.ask(createOneStopTimeCard(res[0], res[1]));
+
     conv.close()
   });
 });
@@ -132,7 +140,7 @@ app.intent('actions_intent_NO_INPUT', (conv) => {
 /**************RESPONSES************************/
 async function sayDeparture(fromStop, toStop, conv) {
   return enturApi.getFromToStop(fromStop, toStop).then(res =>{
-    let fromtopString = fromStop + "";
+    let fromStopString = fromStop + "";
     let toStopString = toStop + "";
 
     if(!conv.screen) {
@@ -141,7 +149,7 @@ async function sayDeparture(fromStop, toStop, conv) {
     }
     else {
       conv.ask(standardResponse(res));
-      conv.ask(createTimeCard(fromtopString, toStopString, res.departureLabel, res.formattedDepartureTime));
+      conv.ask(createTimeCard(fromStopString, toStopString, res.departureLabel, res.formattedDepartureTime));
     }
     conv.close();
   }
@@ -194,6 +202,29 @@ function oneStopResponse(formattedDeparture1, formattedDeparture2){
         directionStop2: formattedDeparture2.directionStop})
       });
     }
+function oneEndStopResponse(formattedDeparture1, formattedDeparture2){
+  return new SimpleResponse({
+    speech: i18n.__('ONE_END_STOP_RESPONSE', {
+      tram1: formattedDeparture1.transportMode,
+      from1: formattedDeparture1.fromStop,
+      departureStop1: formattedDeparture1.departureLabel,
+      departureTime1: formattedDeparture1.formattedDepartureTime,
+      directionStop1: formattedDeparture1.directionStop,
+      departureStop2: formattedDeparture2.departureLabel,
+      departureTime2: formattedDeparture2.formattedDepartureTime,
+      directionStop2: formattedDeparture2.directionStop}),
+
+      text: i18n.__('ONE_END_STOP_RESPONSE', {
+        tram1: formattedDeparture1.transportMode,
+        from1: formattedDeparture1.fromStop,
+        departureStop1: formattedDeparture1.departureLabel,
+        departureTime1: formattedDeparture1.formattedDepartureTime,
+        directionStop1: formattedDeparture1.directionStop,
+        departureStop2: formattedDeparture2.departureLabel,
+        departureTime2: formattedDeparture2.formattedDepartureTime,
+        directionStop2: formattedDeparture2.directionStop})
+      });
+    }
 
 
     function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
@@ -204,6 +235,30 @@ function oneStopResponse(formattedDeparture1, formattedDeparture2){
 
         title: title,
         subtitle: subtitle,
+        buttons: new Button({
+          title: i18n.__('CARD_MORE_INFO'),
+          url: 'https://skyss.no/',
+        }),
+        image: {
+          url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
+          accessibilityText: 'Bergen Light Rail',
+        },
+        display: 'WHITE',
+
+      });
+
+      return card;
+    }
+
+    function createOneStopTimeCard(firstDeparture, secondDeparture ){
+      const title = i18n.__('CARD_TITLE', {timeLeft : firstDeparture.formattedDepartureTime});
+      const subtitle = i18n.__('CARD_SUBTITLE_ONE_STOP', {from : firstDeparture.fromStop.capitalize(), time : firstDeparture.formattedDepartureTime, to : firstDeparture.directionStop});
+      const subtitle2 = i18n.__('CARD_SUBTITLE_ONE_STOP_2', {time2 : secondDeparture.formattedDepartureTime, to2 : secondDeparture.directionStop});
+
+      const card = new BasicCard({
+
+        title: title,
+        subtitle: subtitle + " " + subtitle2,
         buttons: new Button({
           title: i18n.__('CARD_MORE_INFO'),
           url: 'https://skyss.no/',
