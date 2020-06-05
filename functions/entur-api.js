@@ -1,6 +1,5 @@
-const EnturService = require('@entur/sdk').default;
-const convertFeatureToLocation = require('@entur/sdk').convertFeatureToLocation;
-const service = new EnturService({ clientName: 'Pires-BybaneAssistant' })
+const createEnturService = require('@entur/sdk').default
+const service = createEnturService({ clientName: 'Pires-BybaneAssistant' })
 const i18n = require('i18n');
 
 
@@ -9,8 +8,10 @@ module.exports = {
   getFromToStop : async function(fromStop1, toStop1){
     let fromStop = fromStop1+ "";
     let toStop = toStop1 + "";
-    const now = new Date();
-    const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
+    let now = new Date();
+    if(!now.dst()) {now.addHours(1) }
+    const departures =  await service.getDeparturesFromStopPlace(tramStops[fromStop])
+
     let thisDeparture = [];
     let formattedDeparture = {};
 
@@ -26,9 +27,10 @@ module.exports = {
         const serviceJourney = thisDeparture.serviceJourney;
         const line = serviceJourney.journeyPattern.line;
 
-        const departureTime = new Date(expectedDepartureTime)
+        let departureTime = new Date(expectedDepartureTime)
+        if(!departureTime.dst()) {departureTime.addHours(1) }
         const minDiff = minutesDifference(now, departureTime)
-        const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
+        const departureLabel = minDiff === 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime));
 
         formattedDeparture = {
           fromStop : fromStop.capitalize(),
@@ -45,30 +47,32 @@ module.exports = {
   },
   getOnlyFromStop : async function(fromStop1){
     let fromStop = fromStop1 + "";
-    const now = new Date();
-    const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
+    let now = new Date();
+    if(!now.dst()) {now.addHours(1) }
+    const departures =  await service.getDeparturesFromStopPlace (tramStops[fromStop])
     let thisDeparture = [];
     let formattedDepartures = [];
 
     for (var i = 0; i < 2; i++) {
       let thisDeparture = departures[i];
-        const expectedDepartureTime = thisDeparture.expectedDepartureTime;
-        const destinationDisplay = thisDeparture.destinationDisplay;
-        const serviceJourney = thisDeparture.serviceJourney;
-        const line = serviceJourney.journeyPattern.line;
+      const expectedDepartureTime = thisDeparture.expectedDepartureTime;
+      const destinationDisplay = thisDeparture.destinationDisplay;
+      const serviceJourney = thisDeparture.serviceJourney;
+      const line = serviceJourney.journeyPattern.line;
 
-        const departureTime = new Date(expectedDepartureTime)
-        const minDiff = minutesDifference(now, departureTime)
-        const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
+      let departureTime = new Date(expectedDepartureTime);
+      if(!departureTime.dst()) {departureTime.addHours(1) }
+      const minDiff = minutesDifference(now, departureTime)
+      const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
 
-        let dep = {
-          fromStop : fromStop.capitalize(),
-          formattedDepartureTime : toTimeString(departureTime),
-          departureLabel : departureLabel,
-          directionStop : destinationDisplay.frontText,
-          transportMode : line.transportMode
-        }
-        formattedDepartures.push(dep);
+      let dep = {
+        fromStop : fromStop.capitalize(),
+        formattedDepartureTime : toTimeString(departureTime),
+        departureLabel : departureLabel,
+        directionStop : destinationDisplay.frontText,
+        transportMode : line.transportMode
+      }
+      formattedDepartures.push(dep);
 
     }
     return formattedDepartures;
@@ -151,4 +155,19 @@ function minutesLeftString(minDiff) {
 
 String.prototype.capitalize = function() {
   return this.charAt(0).toUpperCase() + this.slice(1);
+}
+
+Date.prototype.stdTimezoneOffset = function () {
+    var jan = new Date(this.getFullYear(), 0, 1);
+    var jul = new Date(this.getFullYear(), 6, 1);
+    return Math.max(jan.getTimezoneOffset(), jul.getTimezoneOffset());
+}
+
+Date.prototype.dst = function () {
+    return this.getTimezoneOffset() < this.stdTimezoneOffset();
+}
+
+Date.prototype.addHours = function(h) {
+  this.setTime(this.getTime() + (h*60*60*1000));
+  return this;
 }
