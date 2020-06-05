@@ -12,11 +12,8 @@
 // limitations under the License.
 
 'use strict';
+const enturApi = require('./entur-api');
 
-const EnturService = require('@entur/sdk').default;
-const convertFeatureToLocation = require('@entur/sdk').convertFeatureToLocation;
-console.log(EnturService)
-const service = new EnturService({ clientName: 'Pires-BybaneAssistant' })
 
 // Import the Dialogflow module from the Actions on Google client library.
 // Import the Dialogflow module and response creation dependencies from the
@@ -87,33 +84,42 @@ app.intent('AskForFromStop', (conv, {fromStopEntity}) => {
 /**INTENT**********************************************************************/
 
 app.intent('AskForFromStop.AskForToStop', (conv, {toStopEntity}) => {
+  conv.localize();
+
   return sayDeparture(conv.data.fromStopEntity, toStopEntity, conv).then(res => {});
 
 });
 
 app.catch((conv, error) => {
-  console.error(error);
-  conv.ask(i18n.__('ERROR'));
-  conv.close();
+console.error(error);
+conv.ask(i18n.__('ERROR'));
+conv.close();
 });
 /**INTENT**********************************************************************/
 
 app.intent('GetNextTramFromToStop', (conv, {fromStopEntity, toStopEntity}) => {
-  if (fromStopEntity.toUpperCase() === "bergen lufthavn".toUpperCase()) {
-    return sayDeparture(fromStopEntity, "byparken", conv).then(res => {});
+  conv.localize();
+  return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
 
-  } else if (fromStopEntity.toUpperCase() === "byparken".toUpperCase()){
-    return sayDeparture(fromStopEntity, "bergen lufthavn", conv).then(res => {});
-
-
-  } else {
-    return sayDeparture(fromStopEntity, toStopEntity, conv).then(res => {});
-
-  }
 
 });
 
+app.intent('GetNextTramsFromOneStop', (conv, {fromStopEntity}) => {
+  conv.localize();
+const fromStopIsByparken = (fromStopEntity.toUpperCase() == "byparken".toUpperCase())
+const fromStopIsAirport = (fromStopEntity.toUpperCase() == "bergen lufthavn".toUpperCase())
 
+  return enturApi.getOnlyFromStop(fromStopEntity).then(res =>{
+    if (fromStopIsByparken || fromStopIsAirport) {
+    conv.ask(oneEndStopResponse(res[0],res[1]));
+  } else {
+    conv.ask(oneStopResponse(res[0],res[1]));
+  }
+    conv.ask(createOneStopTimeCard(res[0], res[1]));
+
+    conv.close()
+  });
+});
 /**INTENT**********************************************************************/
 
 app.intent('actions_intent_NO_INPUT', (conv) => {
@@ -131,52 +137,24 @@ app.intent('actions_intent_NO_INPUT', (conv) => {
 });
 
 
-
-
-
-
-const tramStops = {
-  "byparken": "NSR:StopPlace:30859",
-  "nonneseter": "NSR:StopPlace:30862",
-  "bystasjonen": "NSR:StopPlace:30865",
-  "nygård" : "NSR:StopPlace:30867",
-  "florida" : "NSR:StopPlace:30917",
-  "danmarks plass" : "NSR:StopPlace:31372",
-  "kronstad" : "NSR:StopPlace:31374",
-  "brann stadion" : "NSR:StopPlace:31377",
-  "wergeland" : "NSR:StopPlace:31379",
-  "sletten" : "NSR:StopPlace:31382",
-  "slettebakken" : "NSR:StopPlace:31384",
-  "fantoft" : "NSR:StopPlace:31388",
-  "paradis" : "NSR:StopPlace:29298",
-  "hop" : "NSR:StopPlace:29815",
-  "nesttun terminal" : "NSR:StopPlace:29820",
-  "nesttun sentrum" : "NSR:StopPlace:29817",
-  "skjoldskiftet" : "NSR:StopPlace:29824",
-  "mårdalen" : "NSR:StopPlace:29827",
-  "skjold" : "NSR:StopPlace:29830",
-  "lagunen" : "NSR:StopPlace:30138",
-  "råstølen" : "NSR:StopPlace:30081",
-  "sandslivegen" : "NSR:StopPlace:30143",
-  "sandslimarka" : "NSR:StopPlace:30148",
-  "kokstad" : "NSR:StopPlace:30154",
-  "birkelandsskiftet terminal" : "NSR:StopPlace:30162",
-  "kokstadflaten" : "NSR:StopPlace:30159",
-  "bergen lufthavn" : "NSR:StopPlace:30156",
-}
-
+/**************RESPONSES************************/
 async function sayDeparture(fromStop, toStop, conv) {
-const res = await getFromToStop(fromStop, toStop);
-  conv.localize();
-  if(!conv.screen) {
-    conv.ask(standardResponse(res));
+  return enturApi.getFromToStop(fromStop, toStop).then(res =>{
+    let fromStopString = fromStop + "";
+    let toStopString = toStop + "";
+
+    if(!conv.screen) {
+      conv.ask(standardResponse(res));
+      conv.close();
+    }
+    else {
+      conv.ask(standardResponse(res));
+      conv.ask(createTimeCard(fromStopString, toStopString, res.departureLabel, res.formattedDepartureTime));
+    }
     conv.close();
   }
-  else {
-    conv.ask(standardResponse(res), createTimeCard(fromStop, toStop, res.departureLabel, res.formattedDepartureTime));
-  }
-  conv.close();
-}
+
+)};
 
 
 function standardResponse(formattedDeparture){
@@ -184,10 +162,7 @@ function standardResponse(formattedDeparture){
   const airportToByparken = (formattedDeparture.fromStop.toUpperCase() == "bergen lufthavn".toUpperCase()) && (formattedDeparture.toStop.toUpperCase() == "byparken".toUpperCase());
 
   if (byparkenToAirport || airportToByparken ){
-    return new SimpleResponse({
-      speech: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
-      text: i18n.__('FIRST_LAST_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop})
-    });
+    return firstLastStopResponse(formattedDeparture)
   } else {
     return new SimpleResponse({
       speech: i18n.__('STANDARD_RESPONSE', { tram: formattedDeparture.transportMode, from: formattedDeparture.fromStop, to: formattedDeparture.toStop, departureStop: formattedDeparture.departureLabel, departureTime: formattedDeparture.formattedDepartureTime, directionStop: formattedDeparture.directionStop}),
@@ -204,115 +179,105 @@ function firstLastStopResponse(formattedDeparture){
   });
 }
 
-function minutesLeftString(minDiff) {
-  if (minDiff == 1) {
-    return  i18n.__('IN_MINUTE', {diffMin : minDiff});
-  } else {
-    return  i18n.__('IN_MINUTES', {diffMin : minDiff});
-  }
-}
+function oneStopResponse(formattedDeparture1, formattedDeparture2){
+  return new SimpleResponse({
+    speech: i18n.__('ONE_STOP_RESPONSE', {
+      tram1: formattedDeparture1.transportMode,
+      from1: formattedDeparture1.fromStop,
+      departureStop1: formattedDeparture1.departureLabel,
+      departureTime1: formattedDeparture1.formattedDepartureTime,
+      directionStop1: formattedDeparture1.directionStop,
+      departureStop2: formattedDeparture2.departureLabel,
+      departureTime2: formattedDeparture2.formattedDepartureTime,
+      directionStop2: formattedDeparture2.directionStop}),
 
-function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
-  let title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
-  let subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
+      text: i18n.__('ONE_STOP_RESPONSE', {
+        tram1: formattedDeparture1.transportMode,
+        from1: formattedDeparture1.fromStop,
+        departureStop1: formattedDeparture1.departureLabel,
+        departureTime1: formattedDeparture1.formattedDepartureTime,
+        directionStop1: formattedDeparture1.directionStop,
+        departureStop2: formattedDeparture2.departureLabel,
+        departureTime2: formattedDeparture2.formattedDepartureTime,
+        directionStop2: formattedDeparture2.directionStop})
+      });
+    }
+function oneEndStopResponse(formattedDeparture1, formattedDeparture2){
+  return new SimpleResponse({
+    speech: i18n.__('ONE_END_STOP_RESPONSE', {
+      tram1: formattedDeparture1.transportMode,
+      from1: formattedDeparture1.fromStop,
+      departureStop1: formattedDeparture1.departureLabel,
+      departureTime1: formattedDeparture1.formattedDepartureTime,
+      directionStop1: formattedDeparture1.directionStop,
+      departureStop2: formattedDeparture2.departureLabel,
+      departureTime2: formattedDeparture2.formattedDepartureTime,
+      directionStop2: formattedDeparture2.directionStop}),
 
-  return new BasicCard({
-
-    title: title,
-    subtitle: subtitle,
-    buttons: new Button({
-      title: i18n.__('CARD_MORE_INFO'),
-      url: 'https://skyss.no/',
-    }),
-    image: {
-      url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
-      accessibilityText: 'Bergen Light Rail',
-    },
-    display: 'WHITE',
-
-  })
-}
-
-function determineDirection(fromStop, toStop){
-  let fromStopPos = 0;
-  let toStopPos = 0;
-  let counter = 0;
-  for (var key in tramStops) {
-    counter++;
-    if (fromStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
-      fromStopPos = counter;
-
+      text: i18n.__('ONE_END_STOP_RESPONSE', {
+        tram1: formattedDeparture1.transportMode,
+        from1: formattedDeparture1.fromStop,
+        departureStop1: formattedDeparture1.departureLabel,
+        departureTime1: formattedDeparture1.formattedDepartureTime,
+        directionStop1: formattedDeparture1.directionStop,
+        departureStop2: formattedDeparture2.departureLabel,
+        departureTime2: formattedDeparture2.formattedDepartureTime,
+        directionStop2: formattedDeparture2.directionStop})
+      });
     }
 
-    if (toStop.toUpperCase() === key.toUpperCase()){
-      console.log(counter);
-      toStopPos = counter;
+
+    function createTimeCard(fromStop, toStop, timeLeftToDep, formattedDepartureTime ){
+      const title = i18n.__('CARD_TITLE', {timeLeft : timeLeftToDep});
+      const subtitle = i18n.__('CARD_SUBTITLE', {from : fromStop.capitalize(), to : toStop.capitalize(), time : formattedDepartureTime})
+
+      const card = new BasicCard({
+
+        title: title,
+        subtitle: subtitle,
+        buttons: new Button({
+          title: i18n.__('CARD_MORE_INFO'),
+          url: 'https://skyss.no/',
+        }),
+        image: {
+          url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
+          accessibilityText: 'Bergen Light Rail',
+        },
+        display: 'WHITE',
+
+      });
+
+      return card;
     }
-  }
-  console.log(fromStopPos + ", " + toStopPos);
 
-  if(fromStopPos < toStopPos){
-    return "bergen lufthavn";
-  } else {
-    return "byparken";
-  }
-}
+    function createOneStopTimeCard(firstDeparture, secondDeparture ){
+      const title = i18n.__('CARD_TITLE', {timeLeft : firstDeparture.formattedDepartureTime});
+      const subtitle = i18n.__('CARD_SUBTITLE_ONE_STOP', {from : firstDeparture.fromStop.capitalize(), time : firstDeparture.formattedDepartureTime, to : firstDeparture.directionStop});
+      const subtitle2 = i18n.__('CARD_SUBTITLE_ONE_STOP_2', {time2 : secondDeparture.formattedDepartureTime, to2 : secondDeparture.directionStop});
 
-function toTimeString(date) {
+      const card = new BasicCard({
 
-  const hour = String(date.getHours() + 1).padStart(2, '0')
-  const minute = String(date.getMinutes()).padStart(2, '0')
-  return `${hour}:${minute}`
-}
+        title: title,
+        subtitle: subtitle + " " + subtitle2,
+        buttons: new Button({
+          title: i18n.__('CARD_MORE_INFO'),
+          url: 'https://skyss.no/',
+        }),
+        image: {
+          url: 'https://firebasestorage.googleapis.com/v0/b/bybanen-b14cf.appspot.com/o/bybanen_v3.gif?alt=media&token=03f37481-0061-4930-a0f7-b61b880539ef',
+          accessibilityText: 'Bergen Light Rail',
+        },
+        display: 'WHITE',
 
-function minutesDifference(date1, date2) {
-  const timeDiff = Math.abs(date2.getTime() - date1.getTime())
-  return Math.floor(timeDiff / (1000 * 60))
-}
+      });
 
-async function getFromToStop(fromStop, toStop){
-  const now = new Date();
-  const departures =  await service.getStopPlaceDepartures(tramStops[fromStop])
-  let thisDeparture = [];
-  let formattedDeparture = {};
-
-  const direction = determineDirection(fromStop, toStop);
-
-  for (var i = 0; i < departures.length; i++) {
-    let thisDeparture = departures[i];
-
-    if(thisDeparture.destinationDisplay.frontText.toUpperCase() === direction.toUpperCase()){
-
-      const expectedDepartureTime = thisDeparture.expectedDepartureTime;
-      const destinationDisplay = thisDeparture.destinationDisplay;
-      const serviceJourney = thisDeparture.serviceJourney;
-      //const { line } = serviceJourney.journeyPattern
-      const line = serviceJourney.journeyPattern.line;
-
-      const departureTime = new Date(expectedDepartureTime)
-      const minDiff = minutesDifference(now, departureTime)
-      const departureLabel = minDiff == 0 ? i18n.__('NOW') : (minDiff < 15 ? minutesLeftString(minDiff) : toTimeString(departureTime))
-
-      formattedDeparture = {
-        fromStop : fromStop.capitalize(),
-        toStop : toStop.capitalize(),
-        formattedDepartureTime : toTimeString(departureTime),
-        departureLabel : departureLabel,
-        directionStop : destinationDisplay.frontText,
-        transportMode : line.transportMode
-      }
-
-      return formattedDeparture;
+      return card;
     }
-  }
-}
+
+    String.prototype.capitalize = function() {
+      return this.charAt(0).toUpperCase() + this.slice(1);
+    }
 
 
-String.prototype.capitalize = function() {
-  return this.charAt(0).toUpperCase() + this.slice(1);
-}
-
-
-// Set the DialogflowApp object to handle the HTTPS POST request.
-exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);
+    // Set the DialogflowApp object to handle the HTTPS POST request.
+    exports.dialogflowFirebaseFulfillment = functions.https.onRequest(app);

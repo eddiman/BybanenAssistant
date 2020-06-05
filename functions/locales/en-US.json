@@ -10,6 +10,8 @@
 
   "STANDARD_RESPONSE" : "Got it, the next {{tram}} from {{from}} to {{to}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
   "FIRST_LAST_RESPONSE" : "Got it, the next {{tram}} from {{from}} leaves {{departureStop}} at {{departureTime}} towards {{directionStop}}.",
+  "ONE_STOP_RESPONSE" : "The next {{tram1}} from {{from1}} leaves {{departureStop1}} at {{departureTime1}} towards {{directionStop1}}, and in the other direction towards {{directionStop2}} the {{tram1}} leaves {{departureTime2}}.",
+  "ONE_END_STOP_RESPONSE" : "The next {{tram1}} from {{from1}} leaves {{departureStop1}} at {{departureTime1}} towards {{directionStop1}}, and the next {{tram1}} after that leaves at {{departureTime2}}.",
   "NO_INPUT_1" : "I didn't hear anything.",
   "NO_INPUT_2" : "Please say the name of a Bergen Light Rail stop.",
   "NO_INPUT_3" : "I couldn't hear anything from you, so I'm ending this conversation. Bye!",
@@ -22,6 +24,8 @@
 
   "CARD_TITLE" : "Next light rail leaves {{timeLeft}}",
   "CARD_SUBTITLE" : "From {{from}} to {{to}} at {{time}}",
+  "CARD_SUBTITLE_ONE_STOP" : "From {{from}} at {{time}} towards {{to}}, ",
+  "CARD_SUBTITLE_ONE_STOP_2" : "the next one leaves at {{time2}} towards {{to2}}.",
   "CARD_MORE_INFO" : "More info on skyss.no"
 
 
